@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Absensi TI 27/28</title>
+    <style>
+    /* Menggunakan background gradient biru tua ke hitam */
+    body { 
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        background: linear-gradient(135deg, #0f2027, #203a43, #2c5364); 
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        margin: 0;
+    }
+    .card { 
+        width: 100%;
+        max-width: 500px; 
+        background: rgba(255, 255, 255, 0.95); 
+        padding: 25px; 
+        border-radius: 15px; 
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    h2 { text-align: center; color: #0f2027; margin-bottom: 20px; }
+    
+    .siswa-list { max-height: 350px; overflow-y: auto; margin: 15px 0; padding-right: 10px; }
+    .siswa-item { 
+        display: flex; justify-content: space-between; align-items: center; 
+        padding: 10px; border-bottom: 1px solid #ddd; 
+    }
+    .siswa-item:hover { background: #f9f9f9; }
+    
+    select { padding: 6px; border-radius: 6px; border: 1px solid #aaa; cursor: pointer; }
+    
+    button { 
+        width: 100%; padding: 12px; margin-top: 10px; cursor: pointer; 
+        border: none; border-radius: 8px; font-weight: bold; transition: 0.3s;
+    }
+    .btn-kirim { background: #27ae60; color: white; }
+    .btn-kirim:hover { background: #219150; }
+    .btn-reset { background: #c0392b; color: white; }
+    .btn-reset:hover { background: #a93226; }
+    
+    /* Scrollbar style agar rapi */
+    .siswa-list::-webkit-scrollbar { width: 6px; }
+    .siswa-list::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
+
+    /* Animasi saat tombol ditekan */
+    button:active { transform: scale(0.98); }
+    button:disabled { background: #95a5a6 !important; cursor: not-allowed; opacity: 0.7; }
+    
+    /* Efek loading berkedip */
+    .loading { animation: blink 1.5s infinite; }
+    @keyframes blink {
+        0% { opacity: 1; }
+        50% { opacity: 0.3; }
+        100% { opacity: 1; }
+    }
+</style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Absensi TI 27/28</h2>
+    <input type="date" id="tanggal" style="width:100%; padding:8px; margin-bottom:15px; box-sizing:border-box;">
+    
+    <div id="containerSiswa"></div>
+
+    <button class="btn-kirim" onclick="submit('kirim')">Simpan Absensi</button>
+    <button class="btn-reset" onclick="submit('reset')">Reset Data Tanggal Ini</button>
+</div>
+
+<script>
+    // --- GANTI URL DI BAWAH INI DENGAN URL DEPLOY ANDA ---
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx_pQiximH4p2xJ4XZBkVEu9Lw-qG3BzQ4yvFFJIiO5n0Azmf4OhwvKIJvTGOEM-gkz/exec"; 
+
+    const dataSiswa = [
+        { nama: "Nur'aysyah", kelas: "XI.1", divisi: "Programming" },
+        { nama: "Azra Aurelia Abriyanti", kelas: "XI.2", divisi: "Programming" },
+        { nama: "Kei Syifa Sri Aulia", kelas: "XI.2", divisi: "Programming" },
+        { nama: "Nida Putri Heriyanti", kelas: "XI.2", divisi: "Programming" },
+        { nama: "Fatiha Aulia Angraini", kelas: "XI.7", divisi: "Programming" },
+        { nama: "Nasita Azzahra", kelas: "XI.7", divisi: "Programming" },
+        { nama: "Sofia Cahaya Kirani", kelas: "XI.7", divisi: "Programming" },
+        { nama: "Syarif M. Zahran", kelas: "XI.7", divisi: "Programming" },
+        { nama: "Abyan Prawara", kelas: "X.2", divisi: "Programming" },
+        { nama: "Daffa Anugrah Ramadhan", kelas: "X.4", divisi: "Programming" },
+        { nama: "Rizal Bahy Al-Ghifari", kelas: "X.8", divisi: "Programming" },
+        { nama: "Irsyad Ahmad Fauzan", kelas: "X.11", divisi: "Programming" },
+        { nama: "Anneira Zahra Aulia", kelas: "XI.6", divisi: "Filmmaking" },
+        { nama: "Zaria Layya Rawabin Naftali", kelas: "XI.6", divisi: "Filmmaking" },
+        { nama: "Bening Mutiara Chantika", kelas: "XI.7", divisi: "Filmmaking" },
+        { nama: "Wulan Inayah", kelas: "XI.10", divisi: "Filmmaking" },
+        { nama: "Yassar Jundi Habibi", kelas: "XI.10", divisi: "Filmmaking" },
+        { nama: "Agniya Salsabila", kelas: "XI.11", divisi: "Filmmaking" },
+        { nama: "Neta Putri Dwi Yuniar", kelas: "XI.11", divisi: "Filmmaking" },
+        { nama: "M. Nizar Al-Rasyid", kelas: "XI.11", divisi: "Filmmaking" },
+        { nama: "Sab'atunnisa Mardhiyah Harahap", kelas: "XI.11", divisi: "Filmmaking" },
+        { nama: "M. Anjas Ramdhani", kelas: "X.3", divisi: "Filmmaking" },
+        { nama: "Nayaka Pramudya", kelas: "X.3", divisi: "Filmmaking" },
+        { nama: "Akbari Ramadhani Rizqulloh", kelas: "X.11", divisi: "Filmmaking" },
+        { nama: "Hiban Maulana Hawwari", kelas: "XI.6", divisi: "DKV" },
+        { nama: "Raisya Annafisa Fitria", kelas: "XI.10", divisi: "DKV" },
+        { nama: "Shalfa Nur Fadhillah", kelas: "XI.10", divisi: "DKV" },
+        { nama: "Nathania Yukha Fatima", kelas: "X.1", divisi: "DKV" },
+        { nama: "Khaifa Azzahra", kelas: "XI.1", divisi: "E-Sport" },
+        { nama: "Valentina Mitha Inriani", kelas: "XI.1", divisi: "E-Sport" },
+        { nama: "Silfa Sandi Aulia", kelas: "XI.2", divisi: "E-Sport" },
+        { nama: "Stevani Virda Sari", kelas: "XI.7", divisi: "E-Sport" },
+        { nama: "M. Alan Putra", kelas: "XI.9", divisi: "E-Sport" },
+        { nama: "M. Farid", kelas: "XI.9", divisi: "E-Sport" },
+        { nama: "Bagastian Aryanda Geraldy", kelas: "X.5", divisi: "E-Sport" },
+        { nama: "Davin Raditya Putera", kelas: "X.5", divisi: "E-Sport" },
+        { nama: "Haidar Afnan Wibowo", kelas: "X.5", divisi: "E-Sport" },
+        { nama: "Andrefan Purnama", kelas: "X.6", divisi: "E-Sport" },
+        { nama: "Bayu Indra Febriano", kelas: "X.6", divisi: "E-Sport" },
+        { nama: "Rayyan Qaid Dhaifallah", kelas: "X.6", divisi: "E-Sport" }
+    ];
+
+    document.getElementById('tanggal').valueAsDate = new Date();
+
+    const cont = document.getElementById('containerSiswa');
+    dataSiswa.forEach(s => {
+        cont.innerHTML += `<div class="siswa-item">
+            <span>${s.nama} (${s.kelas})</span>
+            <select class="status">
+                <option value="Hadir">Hadir</option>
+                <option value="Izin">Izin</option>
+                <option value="Sakit">Sakit</option>
+                <option value="Alpa">Alpa</option>
+            </select>
+        </div>`;
+    });
+
+    function submit(tipe) {
+        // 1. Ambil tombol-tombolnya
+        const btns = document.querySelectorAll('button');
+        const originalTexts = Array.from(btns).map(b => b.innerText);
+        
+        // 2. Aktifkan mode loading
+        btns.forEach(b => {
+            b.disabled = true;
+            b.innerText = "Memproses...";
+            b.classList.add('loading');
+        });
+
+        let siswa = [];
+        document.querySelectorAll('.siswa-item').forEach((item, i) => {
+            siswa.push({ ...dataSiswa[i], status: item.querySelector('.status').value });
+        });
+        
+        fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({ action: tipe, tanggal: document.getElementById('tanggal').value, siswa: siswa })
+        })
+        .then(r => r.json())
+        .then(d => { 
+            alert(d.result); 
+            if(tipe === 'kirim') location.reload(); 
+        })
+        .catch(e => alert("Gagal koneksi! Pastikan internet stabil."))
+        .finally(() => {
+            // 3. Kembalikan tombol ke kondisi semula
+            btns.forEach((b, i) => {
+                b.disabled = false;
+                b.innerText = originalTexts[i];
+                b.classList.remove('loading');
+            });
+        });
+    }
+</script>
+</body>
+</html>
